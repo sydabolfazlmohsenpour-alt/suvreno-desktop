@@ -1,0 +1,54 @@
+name: Build Suvreno Desktop
+
+on:
+  workflow_dispatch:
+  push:
+    paths-ignore:
+      - '**.md'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Download icon
+        shell: bash
+        run: |
+          mkdir -p build
+          curl -fsSL -o build/icon.png https://chat.suvreno.ir/icon-512.png || curl -fsSL -o build/icon.png https://suvreno.ir/icon-512.png || true
+          if [ ! -s build/icon.png ]; then
+            echo "icon not found, building with default icon"
+            rm -f build/icon.png
+            node -e "const fs=require('fs');const p=JSON.parse(fs.readFileSync('package.json','utf8'));delete p.build.win.icon;fs.writeFileSync('package.json',JSON.stringify(p,null,2));"
+          fi
+
+      - name: Install
+        run: npm install
+
+      - name: Build exe
+        run: npx electron-builder --win --x64 --publish never
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+
+      - name: Save as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: suvreno-desktop-exe
+          path: dist/*.exe
+
+      - name: Publish to GitHub Releases
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VER=$(node -p "require('./package.json').version")
+          gh release view "v$VER" >/dev/null 2>&1 || gh release create "v$VER" --title "Suvreno Desktop v$VER" --notes "Windows build of Suvreno Desktop"
+          gh release upload "v$VER" dist/Suvreno-*.exe --clobber
