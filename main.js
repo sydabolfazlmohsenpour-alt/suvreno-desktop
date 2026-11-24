@@ -3,6 +3,7 @@ const { app, BrowserWindow, Tray, Menu, shell, globalShortcut, session, nativeIm
 const path = require('path');
 const fs = require('fs');
 const agent = require('./agent');
+const updater = require('./updater');
 
 const START_URL = 'https://chat.suvreno.ir/index.html';
 app.setAppUserModelId('ir.suvreno.desktop');
@@ -113,6 +114,7 @@ function showMain(focusInput) {
   if (mainWin.isMinimized()) mainWin.restore();
   mainWin.show(); mainWin.focus();
   if (focusInput) focusChatInput(mainWin);
+  updater.nudge();
 }
 function toggleMain() {
   if (mainWin && mainWin.isVisible() && mainWin.isFocused()) mainWin.hide();
@@ -165,6 +167,9 @@ function rebuildUI() {
       { label: 'پنجره‌ی جدید', accelerator: 'CommandOrControl+N', click: () => createWindow(false) },
       { label: mini ? 'خروج از حالت مینی (Ctrl+Shift+M)' : 'حالت مینی در گوشه‌ی صفحه (Ctrl+Shift+M)', click: toggleMini },
       { type: 'separator' }, ...toggles(), { type: 'separator' },
+      { label: 'بررسی نسخه‌ی جدید', click: () => updater.checkNow() },
+      { label: 'نسخه‌ی ' + app.getVersion(), enabled: false },
+      { type: 'separator' },
       { label: 'خروج کامل', click: () => { quitting = true; app.quit(); } }
     ] },
     { role: 'editMenu' },
@@ -176,6 +181,8 @@ function rebuildUI() {
     { label: 'نمایش Suvreno  (Ctrl+Shift+Space)', click: () => showMain(true) },
     { label: mini ? 'خروج از حالت مینی' : 'حالت مینی', click: toggleMini },
     { type: 'separator' }, ...toggles(), { type: 'separator' },
+    { label: 'بررسی نسخه‌ی جدید', click: () => updater.checkNow() },
+    { type: 'separator' },
     { label: 'خروج کامل', click: () => { quitting = true; app.quit(); } }
   ]));
 }
@@ -202,6 +209,9 @@ ipcMain.handle('sd:notify', (e, t, b) => {
 /* ---------- ایجنت دسکتاپ (فایل‌ها، باز کردن سایت/برنامه؛ همه‌چیز در agent.js) ---------- */
 agent.register({ ipcMain, settings, saveSettings });
 
+/* ---------- بررسی خودکار نسخه‌ی جدید (updater.js) ---------- */
+updater.register({ settings, saveSettings, getWin: () => mainWin });
+
 /* ---------- شروع ---------- */
 if (!app.requestSingleInstanceLock()) {
   app.quit();
@@ -227,5 +237,7 @@ if (!app.requestSingleInstanceLock()) {
 
     globalShortcut.register('CommandOrControl+Shift+Space', toggleMain);
     globalShortcut.register('CommandOrControl+Shift+M', toggleMini);
+
+    updater.start();
   });
 }

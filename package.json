@@ -1,6 +1,6 @@
 {
   "name": "suvreno-desktop",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Suvreno Desktop - نسخه‌ی دسکتاپ سوورنو",
   "author": "Suvreno",
   "main": "main.js",
@@ -15,7 +15,7 @@
     "appId": "ir.suvreno.desktop",
     "productName": "Suvreno",
     "directories": { "output": "dist" },
-    "files": ["main.js", "preload.js", "agent.js", "package.json", "build/icon.png"],
+    "files": ["main.js", "preload.js", "agent.js", "updater.js", "package.json", "build/icon.png"],
     "win": {
       "icon": "build/icon.png",
       "target": [
