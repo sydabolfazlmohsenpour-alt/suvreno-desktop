@@ -38,11 +38,33 @@ jobs:
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: "false"
 
+      # فایل نسخه برای دو کار: ۱) پیام «نسخه‌ی جدید» داخل برنامه  ۲) لینک دانلود در صفحه‌ی download.html
+      # لینک‌ها خودکار از نام همین مخزن ساخته می‌شوند؛ متن تغییرات از release-notes-desktop.txt (هر خط یک مورد، اختیاری)
+      - name: Create desktop-version.json
+        shell: bash
+        env:
+          REPO: ${{ github.repository }}
+        run: |
+          node - <<'EOF'
+          const fs = require('fs');
+          const v = JSON.parse(fs.readFileSync('package.json', 'utf8')).version;
+          const base = 'https://github.com/' + process.env.REPO + '/releases/download/v' + v + '/';
+          const setup = 'Suvreno-Setup-' + v + '.exe', portable = 'Suvreno-Portable-' + v + '.exe';
+          const size = (f) => { try { return fs.statSync('dist/' + f).size; } catch (e) { return 0; } };
+          let notes = [];
+          try { notes = fs.readFileSync('release-notes-desktop.txt', 'utf8').split(/\r?\n/).map((s) => s.trim()).filter(Boolean).slice(0, 8); } catch (e) {}
+          const out = { version: v, notes, setupUrl: base + setup, setupSize: size(setup), portableUrl: base + portable, portableSize: size(portable), pageUrl: 'https://suvreno.ir/download.html#windows' };
+          fs.writeFileSync('dist/desktop-version.json', JSON.stringify(out, null, 2), 'utf8');
+          console.log(out);
+          EOF
+
       - name: Save as artifact
         uses: actions/upload-artifact@v4
         with:
           name: suvreno-desktop-exe
-          path: dist/*.exe
+          path: |
+            dist/*.exe
+            dist/desktop-version.json
 
       - name: Publish to GitHub Releases
         shell: bash
@@ -51,4 +73,4 @@ jobs:
         run: |
           VER=$(node -p "require('./package.json').version")
           gh release view "v$VER" >/dev/null 2>&1 || gh release create "v$VER" --title "Suvreno Desktop v$VER" --notes "Windows build of Suvreno Desktop"
-          gh release upload "v$VER" dist/Suvreno-*.exe --clobber
+          gh release upload "v$VER" dist/Suvreno-*.exe dist/desktop-version.json --clobber
