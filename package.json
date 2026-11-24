@@ -1,0 +1,34 @@
+{
+  "name": "suvreno-desktop",
+  "version": "1.1.0",
+  "description": "Suvreno Desktop - نسخه‌ی دسکتاپ سوورنو",
+  "author": "Suvreno",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "devDependencies": {
+    "electron": "33.2.1",
+    "electron-builder": "25.1.8"
+  },
+  "build": {
+    "appId": "ir.suvreno.desktop",
+    "productName": "Suvreno",
+    "directories": { "output": "dist" },
+    "files": ["main.js", "preload.js", "agent.js", "package.json", "build/icon.png"],
+    "win": {
+      "icon": "build/icon.png",
+      "target": [
+        { "target": "portable", "arch": ["x64"] },
+        { "target": "nsis", "arch": ["x64"] }
+      ]
+    },
+    "portable": { "artifactName": "Suvreno-Portable-${version}.${ext}" },
+    "nsis": {
+      "artifactName": "Suvreno-Setup-${version}.${ext}",
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true
+    }
+  }
+}
